@@ -1,11 +1,7 @@
-
 //  Pedir/leer API Key
 let apiKey = localStorage.getItem('apiKey');
-if (!apiKey) {
-  apiKey = prompt('Introduce tu API Key de Google Generative AI:');
-  if (apiKey) localStorage.setItem('apiKey', apiKey);
-}
-
+// **Código eliminado: El `prompt` que bloqueaba el WebView**
+// El API Key se inyecta ahora directamente desde la aplicación de Android.
 
 
 // --- Referencias al DOM ---
@@ -28,7 +24,6 @@ const supermarketListEl = document.getElementById('supermarket-list');
 const servingsSelector = document.getElementById('servings-selector');
 
 
-
 // --- Estado de la Aplicación ---
 let baseRecipeForOne = null;
 let currentRecipeForDisplay = null;
@@ -37,15 +32,13 @@ let userLocation = null;
 let currentServings = 1;
 
 
-
-// …luego usa la variable apiKey en tu fetch…
-
 // --- Inicialización ---
 window.onload = function() {
     getLocation();
 };
 
 analyzeButton.disabled = true;
+
 
 // --- Lógica de Geolocalización ---
 function getLocation() {
@@ -71,6 +64,7 @@ function getLocation() {
     }
 }
 
+
 // --- Lógica de Carga de Imagen ---
 fileInput.addEventListener('change', (event) => {
     const file = event.target.files[0];
@@ -89,6 +83,7 @@ fileInput.addEventListener('change', (event) => {
         readerForApi.readAsDataURL(file);
     }
 });
+
 
 // --- Lógica Principal de Análisis ---
 analyzeButton.addEventListener('click', () => {
@@ -178,6 +173,7 @@ Tu respuesta DEBE ser un objeto JSON VÁLIDO sin texto adicional. El JSON debe c
     }
 }
 
+
 // --- Funciones de Renderizado en UI ---
 function updateDisplayForServings() {
     if (!baseRecipeForOne) return;
@@ -251,6 +247,7 @@ function showError(message) {
     resultsContainer.classList.remove('hidden');
     resultContent.classList.add('hidden');
 }
+
 
 // --- Lógica para Compartir ---
 function generateShareableText() {
