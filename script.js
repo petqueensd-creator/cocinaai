@@ -1,12 +1,3 @@
-// Pedir/leer API Key
-let apiKey = localStorage.getItem('apiKey');
-// Si no hay, muestra un mensaje en consola o en pantalla en vez de prompt
-if (!apiKey) {
-  console.warn("⚠️ No se encontró API Key en localStorage");
-  // podrías poner un valor por defecto o mostrar un div de error
-}
-
-
 // --- Referencias al DOM ---
 const fileInput = document.getElementById('file-input');
 const imagePreview = document.getElementById('image-preview');
@@ -26,14 +17,12 @@ const supermarketSectionEl = document.getElementById('supermarket-section');
 const supermarketListEl = document.getElementById('supermarket-list');
 const servingsSelector = document.getElementById('servings-selector');
 
-
 // --- Estado de la Aplicación ---
 let baseRecipeForOne = null;
 let currentRecipeForDisplay = null;
 let imageBase64 = null;
 let userLocation = null;
 let currentServings = 1;
-
 
 // --- Inicialización ---
 window.onload = function() {
@@ -42,16 +31,12 @@ window.onload = function() {
 
 analyzeButton.disabled = true;
 
-
 // --- Lógica de Geolocalización ---
 function getLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
-                userLocation = {
-                    lat: position.coords.latitude,
-                    lon: position.coords.longitude
-                };
+                userLocation = { lat: position.coords.latitude, lon: position.coords.longitude };
                 locationStatusEl.textContent = "✅ Ubicación obtenida. ¡Listo para analizar!";
                 locationStatusEl.classList.replace('bg-gray-100', 'bg-green-100');
                 locationStatusEl.classList.replace('text-gray-600', 'text-green-800');
@@ -66,7 +51,6 @@ function getLocation() {
         locationStatusEl.textContent = "La geolocalización no es soportada por este navegador.";
     }
 }
-
 
 // --- Lógica de Carga de Imagen ---
 fileInput.addEventListener('change', (event) => {
@@ -87,7 +71,6 @@ fileInput.addEventListener('change', (event) => {
     }
 });
 
-
 // --- Lógica Principal de Análisis ---
 analyzeButton.addEventListener('click', () => {
     if (imageBase64) {
@@ -100,73 +83,31 @@ analyzeButton.addEventListener('click', () => {
 servingsSelector.addEventListener('change', (event) => {
     if(event.target.name === 'servings') {
         currentServings = parseInt(event.target.value, 10);
-        if(baseRecipeForOne) {
-            updateDisplayForServings();
-        }
+        if(baseRecipeForOne) updateDisplayForServings();
     }
 });
 
+// --- Función analyzeImage adaptada para Web App seguro ---
 async function analyzeImage(base64ImageData) {
     resetUI();
     resultsContainer.classList.remove('hidden');
     loader.classList.remove('hidden');
     analyzeButton.disabled = true;
 
-  
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+    const apiUrl = 'https://script.google.com/macros/s/AKfycbxQPst6wDVirAh32EGQN3hGYxEUQ5RNW1QLU7zhZnWHEOKyND0xB7Rx66GJVjywi39B/exec';
     
-    const locationText = userLocation ? `El usuario está en latitud ${userLocation.lat}, longitud ${userLocation.lon}.` : "No se pudo obtener la ubicación del usuario, asume que están en Estados Unidos.";
-    
-    const systemPrompt = `Eres un chef experto y analista de costos. ${locationText} Analiza la imagen del platillo.
-IMPORTANTE: Tu objetivo principal es crear una receta para UNA SOLA PERSONA. Utiliza estas guías de porción promedio por persona:
-- Carne de res/cerdo/cordero: 150g
-- Pollo/Pescado: 120g
-- Arroz (crudo): 50g
-- Papas/Yuca/Camote: 150g
-- Frijoles/Lentejas (cocido): 1 taza
-Ajusta los demás ingredientes (verduras, especias, etc.) para que coincidan con una porción individual.
-
-Tu respuesta DEBE ser un objeto JSON VÁLIDO sin texto adicional. El JSON debe contener:
-1. 'dishName': El nombre del platillo.
-2. 'ingredients': Un array de objetos, cada uno con 'name', 'quantity', 'unit' y 'estimatedLocalPrice' (costo para la cantidad de UNA porción, en la moneda local).
-3. 'instructions': Un array de strings con los pasos de preparación (para una porción).
-4. 'currencyCode': El código de 3 letras de la moneda local.
-5. 'supermarketSuggestions': Un array con 2-3 nombres de supermercados comunes en la región.`;
-    
-    const payload = {
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ parts: [
-            { text: "Analiza este platillo y dame la receta para UNA SOLA PERSONA, con costos locales y sugerencias, en formato JSON." }, 
-            { inlineData: { mimeType: "image/jpeg", data: base64ImageData } }
-        ] }],
-        generationConfig: {
-            responseMimeType: "application/json",
-            responseSchema: {
-                type: "OBJECT",
-                properties: {
-                    dishName: { type: "STRING" },
-                    ingredients: { type: "ARRAY", items: { type: "OBJECT", properties: { name: { type: "STRING" }, quantity: { type: "NUMBER" }, unit: { type: "STRING" }, estimatedLocalPrice: { type: "NUMBER" } }, required: ["name", "quantity", "unit", "estimatedLocalPrice"] } },
-                    instructions: { type: "ARRAY", items: { type: "STRING" } },
-                    currencyCode: { type: "STRING" },
-                    supermarketSuggestions: { type: "ARRAY", items: { type: "STRING" } }
-                },
-                required: ["dishName", "ingredients", "instructions", "currencyCode", "supermarketSuggestions"]
-            }
-        }
-    };
-    
-     try {
-        const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    try {
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: base64ImageData })
+        });
         if (!response.ok) throw new Error(`API Error: ${response.status}`);
         const result = await response.json();
-        const candidate = result.candidates?.[0];
 
-        if (candidate && candidate.content?.parts?.[0]?.text) {
-            baseRecipeForOne = JSON.parse(candidate.content.parts[0].text);
-            updateDisplayForServings();
-        } else {
-             throw new Error("No se pudo obtener una respuesta válida del modelo.");
-        }
+        // Asume que tu Apps Script devuelve directamente el JSON esperado
+        baseRecipeForOne = result;
+        updateDisplayForServings();
 
     } catch (error) {
         console.error("Error detallado:", error);
@@ -176,12 +117,11 @@ Tu respuesta DEBE ser un objeto JSON VÁLIDO sin texto adicional. El JSON debe c
     }
 }
 
-
 // --- Funciones de Renderizado en UI ---
 function updateDisplayForServings() {
     if (!baseRecipeForOne) return;
 
-    const scaledRecipe = JSON.parse(JSON.stringify(baseRecipeForOne)); 
+    const scaledRecipe = JSON.parse(JSON.stringify(baseRecipeForOne));
     scaledRecipe.ingredients.forEach(ing => {
         ing.quantity *= currentServings;
         ing.estimatedLocalPrice *= currentServings;
@@ -251,10 +191,9 @@ function showError(message) {
     resultContent.classList.add('hidden');
 }
 
-
-// --- Lógica para Compartir ---
+// --- Compartir ---
 function generateShareableText() {
-     if (!currentRecipeForDisplay) return "Mi receta";
+    if (!currentRecipeForDisplay) return "Mi receta";
 
     const recipe = currentRecipeForDisplay;
     let totalCost = 0;
@@ -295,4 +234,3 @@ function share(platform) {
 
     if (url) window.open(url, '_blank');
 }
-
