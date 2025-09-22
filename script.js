@@ -1,7 +1,10 @@
-//  Pedir/leer API Key
+// Pedir/leer API Key
 let apiKey = localStorage.getItem('apiKey');
-// **Código eliminado: El `prompt` que bloqueaba el WebView**
-// El API Key se inyecta ahora directamente desde la aplicación de Android.
+// Si no hay, muestra un mensaje en consola o en pantalla en vez de prompt
+if (!apiKey) {
+  console.warn("⚠️ No se encontró API Key en localStorage");
+  // podrías poner un valor por defecto o mostrar un div de error
+}
 
 
 // --- Referencias al DOM ---
@@ -292,3 +295,4 @@ function share(platform) {
 
     if (url) window.open(url, '_blank');
 }
+
