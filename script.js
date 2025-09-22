@@ -1,11 +1,10 @@
-// ---------------------------
-// script.js seguro para WebView
-// ---------------------------
+// --- Estado de la Aplicación ---
+let baseRecipeForOne = null;
+let currentRecipeForDisplay = null;
+let currentServings = 1;
+let imageBase64 = null;
 
-// URL del Google Script que publicaste
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzzlPkz_Oa5IMx4WGbY31TXhzcNHXNGOv4BsrE99o_7Nv0qjWq-H1P3fKWEH9S0w5z5bw/exec";
-
-// Referencias al DOM
+// --- Referencias al DOM ---
 const fileInput = document.getElementById('file-input');
 const imagePreview = document.getElementById('image-preview');
 const analyzeButton = document.getElementById('analyze-button');
@@ -13,83 +12,131 @@ const resultsContainer = document.getElementById('results-container');
 const loader = document.getElementById('loader');
 const resultContent = document.getElementById('result-content');
 const errorMessage = document.getElementById('error-message');
+const dishNameEl = document.getElementById('dish-name');
+const instructionListEl = document.getElementById('instruction-list');
+const cartListEl = document.getElementById('cart-list');
+const totalCostEl = document.getElementById('total-cost');
+const supermarketSectionEl = document.getElementById('supermarket-section');
+const supermarketListEl = document.getElementById('supermarket-list');
+const servingsSelector = document.getElementById('servings-selector');
 
-let imageBase64 = null;
-
-// Inicialización
+// --- Inicialización ---
 window.onload = function() {
     analyzeButton.disabled = true;
 };
 
-// Manejo de carga de imagen
+// --- Carga de imagen ---
 fileInput.addEventListener('change', (event) => {
     const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        imagePreview.src = e.target.result;
-        imagePreview.classList.remove('hidden');
-        analyzeButton.disabled = false;
-        imageBase64 = e.target.result.split(',')[1];
-    };
-    reader.readAsDataURL(file);
-});
-
-// Lógica principal de análisis
-analyzeButton.addEventListener('click', async () => {
-    if (!imageBase64) return showError("Selecciona primero una imagen.");
-
-    resetUI();
-    resultsContainer.classList.remove('hidden');
-    loader.classList.remove('hidden');
-    analyzeButton.disabled = true;
-
-    try {
-        const payload = { imageBase64 };
-        const response = await fetch(GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) throw new Error(`Error de API: ${response.status}`);
-        const result = await response.json();
-        const candidateText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-
-        if (!candidateText) throw new Error("No se recibió respuesta válida del Script");
-
-        const recipe = JSON.parse(candidateText);
-        displayResults(recipe);
-
-    } catch (err) {
-        console.error("Error detallado:", err);
-        showError("No se pudo analizar la imagen. Intenta otra foto.");
-    } finally {
-        analyzeButton.disabled = false;
-        loader.classList.add('hidden');
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            imagePreview.src = e.target.result;
+            imagePreview.classList.remove('hidden');
+            analyzeButton.disabled = false;
+            imageBase64 = e.target.result.split(',')[1]; // guardar solo base64
+        };
+        reader.readAsDataURL(file);
     }
 });
 
-// Funciones de UI
-function displayResults(data) {
-    resultContent.classList.remove('hidden');
-    resultsContainer.classList.remove('hidden');
-    errorMessage.classList.add('hidden');
+// --- Botón de análisis ---
+analyzeButton.addEventListener('click', () => {
+    if (imageBase64) {
+        // Llamamos a Android para procesar la imagen
+        if (window.AndroidInterface && window.AndroidInterface.analyzeImage) {
+            resetUI();
+            loader.classList.remove('hidden');
+            window.AndroidInterface.analyzeImage(imageBase64);
+        } else {
+            showError("No se detectó la interfaz de Android.");
+        }
+    } else {
+        showError("Selecciona una imagen primero.");
+    }
+});
 
-    resultContent.innerHTML = `<h2>${data.dishName}</h2>
-        <ul>${data.ingredients.map(i => `<li>${i.quantity} ${i.unit} de ${i.name} (~${i.estimatedLocalPrice} ${data.currencyCode})</li>`).join('')}</ul>
-        <ol>${data.instructions.map(ins => `<li>${ins}</li>`).join('')}</ol>
-        ${data.supermarketSuggestions?.length ? `<p>Supermercados: ${data.supermarketSuggestions.join(', ')}</p>` : ''}`;
+// --- Función que Android llamará para pasar los resultados ---
+function handleAnalysisResult(jsonString) {
+    try {
+        baseRecipeForOne = JSON.parse(jsonString);
+        currentServings = 1;
+        updateDisplayForServings();
+    } catch (err) {
+        showError("Error al procesar la respuesta del servidor.");
+        console.error(err);
+    }
 }
 
+// --- Actualizar UI ---
+function updateDisplayForServings() {
+    if (!baseRecipeForOne) return;
+
+    const scaledRecipe = JSON.parse(JSON.stringify(baseRecipeForOne));
+    scaledRecipe.ingredients.forEach(ing => {
+        ing.quantity *= currentServings;
+        ing.estimatedLocalPrice *= currentServings;
+    });
+    currentRecipeForDisplay = scaledRecipe;
+    displayResults(currentRecipeForDisplay);
+}
+
+function displayResults(data) {
+    loader.classList.add('hidden');
+    resultContent.classList.remove('hidden');
+    resultsContainer.classList.remove('hidden');
+
+    dishNameEl.textContent = `${data.dishName || "Plato no identificado"} (para ${currentServings} ${currentServings > 1 ? 'personas' : 'persona'})`;
+
+    // Ingredientes
+    cartListEl.innerHTML = '';
+    let totalCost = 0;
+    data.ingredients.forEach(ing => {
+        const li = document.createElement('li');
+        li.innerHTML = `${ing.quantity.toFixed(2)} ${ing.unit} de ${ing.name} - ${ing.estimatedLocalPrice.toFixed(2)} ${data.currencyCode}`;
+        cartListEl.appendChild(li);
+        totalCost += ing.estimatedLocalPrice;
+    });
+    totalCostEl.textContent = `Total: ${totalCost.toFixed(2)} ${data.currencyCode}`;
+
+    // Instrucciones
+    instructionListEl.innerHTML = '';
+    data.instructions.forEach(step => {
+        const li = document.createElement('li');
+        li.textContent = step;
+        instructionListEl.appendChild(li);
+    });
+
+    // Supermercados
+    supermarketListEl.innerHTML = '';
+    if (data.supermarketSuggestions && data.supermarketSuggestions.length > 0) {
+        supermarketSectionEl.classList.remove('hidden');
+        data.supermarketSuggestions.forEach(store => {
+            const li = document.createElement('li');
+            li.textContent = store;
+            supermarketListEl.appendChild(li);
+        });
+    } else {
+        supermarketSectionEl.classList.add('hidden');
+    }
+}
+
+// --- UI ---
 function resetUI() {
     resultContent.classList.add('hidden');
     errorMessage.classList.add('hidden');
+    loader.classList.add('hidden');
+    resultsContainer.classList.add('hidden');
+    baseRecipeForOne = null;
+    currentRecipeForDisplay = null;
+    document.getElementById('servings1').checked = true;
+    currentServings = 1;
 }
 
 function showError(msg) {
+    loader.classList.add('hidden');
     errorMessage.textContent = msg;
     errorMessage.classList.remove('hidden');
     resultsContainer.classList.remove('hidden');
+    resultContent.classList.add('hidden');
 }
