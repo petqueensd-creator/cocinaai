@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", function () {
       console.warn("AndroidBridge no disponible. Simulando resultado...");
       mostrarResultado({
         plato: "Spaghetti Carbonara",
-        ingredientes: ["pasta", "huevo", "queso", "panceta"],
+        ingredientes: ["rata"],
         imagen: imageUrl
       });
     }
@@ -78,3 +78,4 @@ document.addEventListener("DOMContentLoaded", function () {
     `;
   };
 });
+
