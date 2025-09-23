@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", "demoparatodo"); // solo una vez
+    formData.append("upload_preset", "demoparatodo");
 
     fetch("https://api.cloudinary.com/v1_1/dr985hdwg/image/upload", {
       method: "POST",
@@ -46,25 +46,23 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   });
 
-function analizarImagen(imageUrl) {
-  console.log("Enviando imagen a análisis:", imageUrl);
+  function analizarImagen(imageUrl) {
+    console.log("Enviando imagen a análisis:", imageUrl);
 
-  // Simulación temporal para evitar CORS
-  const data = {
-    plato: "Spaghetti Carbonara",
-    ingredientes: ["pasta", "huevo", "queso", "panceta"],
-    imagen: imageUrl
-  };
+    // Simulación temporal para evitar CORS en GitHub Pages
+    const data = {
+      plato: "Spaghetti Carbonara",
+      ingredientes: ["pasta", "huevo", "queso", "panceta"],
+      imagen: imageUrl
+    };
 
-  resultadoDiv.classList.remove("hidden");
-  resultadoDiv.innerHTML = `
-    <div class="text-center">
-      <h2 class="text-xl font-bold mb-2">🍽️ Plato detectado: ${data.plato}</h2>
-      <p class="text-gray-700">🧂 Ingredientes: ${data.ingredientes.join(", ")}</p>
-      <img src="${data.imagen}" class="mx-auto mt-4 rounded-lg shadow-md max-w-xs">
-    </div>
-  `;
-}
-
+    resultadoDiv.classList.remove("hidden");
+    resultadoDiv.innerHTML = `
+      <div class="text-center">
+        <h2 class="text-xl font-bold mb-2">🍽️ Plato detectado: ${data.plato}</h2>
+        <p class="text-gray-700">🧂 Ingredientes: ${data.ingredientes.join(", ")}</p>
+        <img src="${data.imagen}" class="mx-auto mt-4 rounded-lg shadow-md max-w-xs">
+      </div>
+    `;
+  }
 });
-
