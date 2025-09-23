@@ -47,16 +47,28 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   function analizarImagen(imageUrl) {
-    console.log("Enviando imagen a análisis:", imageUrl);
+    console.log("Enviando imagen a Android para análisis:", imageUrl);
 
-    // Simulación temporal para evitar CORS en GitHub Pages
-    const data = {
-      plato: "Spaghetti Carbonara",
-      ingredientes: ["pasta", "huevo", "queso", "panceta"],
-      imagen: imageUrl
-    };
+    if (window.AndroidBridge && window.AndroidBridge.analizar) {
+      window.AndroidBridge.analizar(imageUrl);
+    } else {
+      console.warn("AndroidBridge no disponible. Simulando resultado...");
+      mostrarResultado({
+        plato: "Spaghetti Carbonara",
+        ingredientes: ["pasta", "huevo", "queso", "panceta"],
+        imagen: imageUrl
+      });
+    }
+  }
 
+  window.mostrarResultado = function (data) {
     resultadoDiv.classList.remove("hidden");
+
+    if (data.error) {
+      resultadoDiv.innerHTML = `<div class="text-red-600">❌ ${data.error}</div>`;
+      return;
+    }
+
     resultadoDiv.innerHTML = `
       <div class="text-center">
         <h2 class="text-xl font-bold mb-2">🍽️ Plato detectado: ${data.plato}</h2>
@@ -64,5 +76,5 @@ document.addEventListener("DOMContentLoaded", function () {
         <img src="${data.imagen}" class="mx-auto mt-4 rounded-lg shadow-md max-w-xs">
       </div>
     `;
-  }
+  };
 });
