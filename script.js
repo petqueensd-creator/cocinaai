@@ -1,8 +1,8 @@
 document.addEventListener("DOMContentLoaded", function () {
-  const uploadInput = document.getElementById("upload");
-  const previewImg = document.getElementById("imgPreview");
-  const analizarBtn = document.getElementById("analizar");
-  const resultadoDiv = document.getElementById("resultado");
+  const uploadInput = document.getElementById("file-input");
+  const previewImg = document.getElementById("image-preview");
+  const analizarBtn = document.getElementById("analyze-button");
+  const resultadoDiv = document.getElementById("results-container");
 
   analizarBtn.disabled = true;
 
@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log("Imagen subida:", imageUrl);
 
         previewImg.src = imageUrl;
-        previewImg.style.display = "block";
+        previewImg.classList.remove("hidden");
 
         analizarBtn.disabled = false;
         analizarBtn.onclick = () => {
@@ -33,7 +33,8 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .catch(err => {
         console.error("Error al subir a Cloudinary:", err);
-        resultadoDiv.innerText = "❌ Error al subir la imagen.";
+        resultadoDiv.innerHTML = "<div class='text-red-600'>❌ Error al subir la imagen.</div>";
+        resultadoDiv.classList.remove("hidden");
       });
   });
 
@@ -47,13 +48,18 @@ document.addEventListener("DOMContentLoaded", function () {
     })
       .then(res => res.json())
       .then(data => {
-        resultadoDiv.innerText =
-          `🍽️ Plato detectado: ${data.plato}\n🧂 Ingredientes: ${data.ingredientes.join(", ")}`;
+        resultadoDiv.classList.remove("hidden");
+        resultadoDiv.innerHTML = `
+          <div class="text-center">
+            <h2 class="text-xl font-bold mb-2">🍽️ Plato detectado: ${data.plato}</h2>
+            <p class="text-gray-700">🧂 Ingredientes: ${data.ingredientes.join(", ")}</p>
+          </div>
+        `;
       })
       .catch(err => {
         console.error("Error al analizar la imagen:", err);
-        resultadoDiv.innerText = "❌ Error al analizar la imagen.";
+        resultadoDiv.innerHTML = "<div class='text-red-600'>❌ Error al analizar la imagen.</div>";
+        resultadoDiv.classList.remove("hidden");
       });
   }
 });
-
