@@ -9,29 +9,42 @@ document.addEventListener("DOMContentLoaded", function () {
   uploadInput.addEventListener("change", function (e) {
     const file = e.target.files[0];
     if (!file) return;
-console.log("Archivo seleccionado:", file);
+
+    console.log("Archivo seleccionado:", file);
+
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", "demo");
+    formData.append("upload_preset", "demoparatodo"); // solo una vez
 
-const formData = new FormData();
-formData.append("file", file);
-formData.append("upload_preset", "demoparatodo"); // ← este es el nombre exacto del preset
+    fetch("https://api.cloudinary.com/v1_1/dr985hdwg/image/upload", {
+      method: "POST",
+      body: formData
+    })
+      .then(res => res.json())
+      .then(data => {
+        const imageUrl = data.secure_url;
+        console.log("Imagen subida:", imageUrl);
 
-fetch("https://api.cloudinary.com/v1_1/dr985hdwg/image/upload", {
-  method: "POST",
-  body: formData
-})
-.then(res => res.json())
-.then(data => {
-  const imageUrl = data.secure_url;
-  console.log("Imagen subida:", imageUrl);
-  // continuar con análisis...
-})
-.catch(err => {
-  console.error("Error al subir a Cloudinary:", err);
-});
+        if (!imageUrl) {
+          resultadoDiv.innerHTML = "<div class='text-red-600'>❌ No se pudo subir la imagen.</div>";
+          resultadoDiv.classList.remove("hidden");
+          return;
+        }
 
+        previewImg.src = imageUrl;
+        previewImg.classList.remove("hidden");
+
+        analizarBtn.disabled = false;
+        analizarBtn.onclick = () => {
+          analizarImagen(imageUrl);
+        };
+      })
+      .catch(err => {
+        console.error("Error al subir a Cloudinary:", err);
+        resultadoDiv.innerHTML = "<div class='text-red-600'>❌ Error al subir la imagen.</div>";
+        resultadoDiv.classList.remove("hidden");
+      });
+  });
 
   function analizarImagen(imageUrl) {
     console.log("Enviando imagen a análisis:", imageUrl);
@@ -58,5 +71,3 @@ fetch("https://api.cloudinary.com/v1_1/dr985hdwg/image/upload", {
       });
   }
 });
-
-
