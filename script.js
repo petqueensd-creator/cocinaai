@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", function () {
   uploadInput.addEventListener("change", function (e) {
     const file = e.target.files[0];
     if (!file) return;
-
+console.log("Archivo seleccionado:", file);
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", "demo");
@@ -58,4 +58,5 @@ fetch("https://api.cloudinary.com/v1_1/dr985hdwg/image/upload", {
       });
   }
 });
+
 
