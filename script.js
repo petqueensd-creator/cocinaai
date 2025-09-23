@@ -14,29 +14,24 @@ document.addEventListener("DOMContentLoaded", function () {
     formData.append("file", file);
     formData.append("upload_preset", "demo");
 
-    fetch("https://api.cloudinary.com/v1_1/dr985hdwg/image/upload", {
-      method: "POST",
-      body: formData
-    })
-      .then(res => res.json())
-      .then(data => {
-        const imageUrl = data.secure_url;
-        console.log("Imagen subida:", imageUrl);
+const formData = new FormData();
+formData.append("file", file);
+formData.append("upload_preset", "demoparatodo"); // ← este es el nombre exacto del preset
 
-        previewImg.src = imageUrl;
-        previewImg.classList.remove("hidden");
+fetch("https://api.cloudinary.com/v1_1/dr985hdwg/image/upload", {
+  method: "POST",
+  body: formData
+})
+.then(res => res.json())
+.then(data => {
+  const imageUrl = data.secure_url;
+  console.log("Imagen subida:", imageUrl);
+  // continuar con análisis...
+})
+.catch(err => {
+  console.error("Error al subir a Cloudinary:", err);
+});
 
-        analizarBtn.disabled = false;
-        analizarBtn.onclick = () => {
-          analizarImagen(imageUrl);
-        };
-      })
-      .catch(err => {
-        console.error("Error al subir a Cloudinary:", err);
-        resultadoDiv.innerHTML = "<div class='text-red-600'>❌ Error al subir la imagen.</div>";
-        resultadoDiv.classList.remove("hidden");
-      });
-  });
 
   function analizarImagen(imageUrl) {
     console.log("Enviando imagen a análisis:", imageUrl);
@@ -63,3 +58,4 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 });
+
